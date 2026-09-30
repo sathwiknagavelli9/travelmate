@@ -6,7 +6,6 @@ import type { PackageView } from "@/types";
 import { money, todayIndia } from "@/lib/utils";
 export function BookingWidget({ trip }: { trip: PackageView }) {
   const [count, setCount] = useState(1);
-  const [date, setDate] = useState("");
   const router = useRouter();
   const tomorrow = new Date(`${todayIndia()}T00:00:00Z`);
   tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
@@ -31,6 +30,7 @@ export function BookingWidget({ trip }: { trip: PackageView }) {
       <form
         onSubmit={(e) => {
           e.preventDefault();
+          const date = String(new FormData(e.currentTarget).get("travelDate"));
           router.push(`/booking/${trip._id}?date=${date}&travelers=${count}`);
         }}
       >
@@ -38,12 +38,11 @@ export function BookingWidget({ trip }: { trip: PackageView }) {
           <label htmlFor="travel-date">When shall we go?</label>
           <input
             id="travel-date"
+            name="travelDate"
             type="date"
             min={min}
             max={trip.availableUntil.slice(0, 10)}
             required
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
           />
         </div>
         <div className="field">

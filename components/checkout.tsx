@@ -71,6 +71,7 @@ export function Checkout({
               onSubmit={(e) => {
                 e.preventDefault();
                 const data = new FormData(e.currentTarget);
+                setDate(String(data.get("travelDate")));
                 setTravelers(
                   Array.from({ length: count }, (_, i) => ({
                     fullName: String(data.get(`name-${i}`)),
@@ -93,11 +94,11 @@ export function Checkout({
                   <input
                     type="date"
                     id="date"
+                    name="travelDate"
                     required
                     min={min}
                     max={trip.availableUntil.slice(0, 10)}
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
+                    defaultValue={date}
                   />
                 </div>
                 <div className="field">

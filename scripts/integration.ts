@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import mongoose from "mongoose";
+import { SignJWT } from "jose";
+import { packages } from "../lib/catalog";
 import { connectDB } from "../lib/db";
 import { User, Booking, Payment, Destination, TourPackage } from "../models";
 const base = process.env.TEST_BASE_URL || "http://localhost:3000";
@@ -44,6 +46,29 @@ async function request(
 }
 async function main() {
   await connectDB();
+  const beach = await packages({ type: "Beach", max: "17000" });
+  assert.ok(
+    beach.length > 0 &&
+      beach.every(
+        (p) => p.packageType === "Beach" && p.pricePerPerson <= 17000,
+      ),
+  );
+  checks++;
+  const sorted = await packages({ sort: "price-asc" });
+  assert.ok(
+    sorted.every(
+      (p, i) => i === 0 || p.pricePerPerson >= sorted[i - 1].pricePerPerson,
+    ),
+  );
+  checks++;
+  const short = await packages({ duration: "3" });
+  assert.ok(short.every((p) => p.durationDays <= 3));
+  checks++;
+  assert.equal(
+    (await packages({ q: "nonexistent-unique-destination" })).length,
+    0,
+  );
+  checks++;
   for (const path of [
     "/",
     "/destinations",
@@ -58,6 +83,12 @@ async function main() {
   ]) {
     const r = await fetch(`${base}${path}`);
     assert.equal(r.status, 200, path);
+    const html = await r.text();
+    if (path !== "/login" && path !== "/register")
+      assert.ok(
+        html.includes(path === "/destinations" ? "/destinations/goa" : "Goa"),
+        `${path} must render database content, not just a streamed 200 shell`,
+      );
     checks++;
   }
   const data = {
@@ -76,6 +107,9 @@ async function main() {
   );
   const userCookie = registration.cookie;
   assert.match(registration.headers.get("set-cookie") || "", /HttpOnly/i);
+  assert.match(registration.headers.get("set-cookie") || "", /SameSite=lax/i);
+  if (base.startsWith("https://"))
+    assert.match(registration.headers.get("set-cookie") || "", /Secure/i);
   checks++;
   await request("/api/auth/register", "POST", data, "", 409);
   await request(
@@ -86,6 +120,29 @@ async function main() {
     401,
   );
   await request("/api/auth/login", "POST", { email, password });
+  const testUser = await User.findOne({ email });
+  assert.ok(testUser);
+  const expired = await new SignJWT({})
+    .setProtectedHeader({ alg: "HS256" })
+    .setSubject(testUser.id)
+    .setIssuer("travelmate")
+    .setAudience("travelmate")
+    .setExpirationTime(Math.floor(Date.now() / 1000) - 60)
+    .sign(new TextEncoder().encode(process.env.AUTH_SECRET));
+  await request(
+    "/api/bookings",
+    "GET",
+    undefined,
+    `travelmate_session=${expired}`,
+    401,
+  );
+  await request(
+    "/api/bookings",
+    "GET",
+    undefined,
+    "travelmate_session=invalid-token",
+    401,
+  );
   const other = await request(
     "/api/auth/register",
     "POST",
