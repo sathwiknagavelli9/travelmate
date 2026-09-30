@@ -1,0 +1,77 @@
+export type DestinationView = {
+  _id: string;
+  name: string;
+  slug: string;
+  state: string;
+  country: string;
+  shortDescription: string;
+  description: string;
+  heroImage: string;
+  gallery: string[];
+  bestTimeToVisit: string;
+  attractions: string[];
+  basicTravelInformation: string;
+  active: boolean;
+};
+export type PackageView = {
+  _id: string;
+  name: string;
+  slug: string;
+  destination: DestinationView;
+  shortDescription: string;
+  description: string;
+  packageType: string;
+  pricePerPerson: number;
+  durationDays: number;
+  durationNights: number;
+  maximumTravelers: number;
+  transportation: string;
+  accommodation: string;
+  localTransportation: string;
+  placesCovered: string[];
+  itinerary: {
+    day: number;
+    title: string;
+    description: string;
+    activities: string[];
+  }[];
+  inclusions: string[];
+  exclusions: string[];
+  images: string[];
+  featured: boolean;
+  popularity: number;
+  available: boolean;
+  availableFrom: string;
+  availableUntil: string;
+};
+export type SessionUser = {
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  createdAt: string;
+};
+export type BookingView = {
+  _id: string;
+  bookingCode: string;
+  packageName: string;
+  destinationName: string;
+  packageImage: string;
+  travelDate: string;
+  durationDays: number;
+  numberOfTravelers: number;
+  travelers: {
+    fullName: string;
+    age: number;
+    gender?: string;
+    phone?: string;
+  }[];
+  pricePerPersonAtBooking: number;
+  totalAmount: number;
+  bookingStatus: string;
+  paymentStatus: string;
+  createdAt: string;
+  cancelledAt?: string;
+  cancellationReason?: string;
+};
